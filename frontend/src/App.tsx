@@ -7,6 +7,9 @@ import { AppLayout } from "@/components/AppLayout";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import ChangePassword from "@/pages/ChangePassword";
 import Dashboard from "@/pages/Dashboard";
 import Feed from "@/pages/Feed";
 import Kanban from "@/pages/Kanban";
@@ -20,7 +23,8 @@ import NotFound from "@/pages/NotFound";
 import UserImport from "./pages/UserImport";
 import OrgStructure from "./pages/OrgStructure";
 import { getCurrentUser } from "@/data/mock";
-import { useEffect } from "react";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -31,14 +35,18 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route element={<AppLayout />}>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/kanban" element={<Kanban />} />
@@ -52,8 +60,9 @@ const App = () => {
               {currentUser.role !== "funcionario" && <Route path="/orgstructure" element={<OrgStructure />} />}
             </Route>
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
