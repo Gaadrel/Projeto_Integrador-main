@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Gift, Star, ShoppingCart, History, Plus, Pencil, Trash2, Edit2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ParticleCard } from "@/components/ParticleCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -765,7 +766,7 @@ export default function Rewards() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
                 >
-                  <Card className="overflow-hidden hover:shadow-lg transition-all group">
+                  <ParticleCard className="rounded-xl border bg-card text-card-foreground shadow overflow-hidden hover:shadow-lg transition-all group" enableStars={true} clickEffect={true}>
                     <div className="h-32 bg-gradient-card flex items-center justify-center text-6xl">
                       {reward.emoji || "🎁"}
                     </div>
@@ -823,7 +824,7 @@ export default function Rewards() {
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
+                  </ParticleCard>
                 </motion.div>
               ))}
             </div>
@@ -847,7 +848,7 @@ export default function Rewards() {
             <>
               <div className="space-y-4">
                 {redemptions.map((redemption) => (
-                  <Card key={redemption.id} className="p-4">
+                  <ParticleCard key={redemption.id} className="rounded-xl border bg-card text-card-foreground shadow p-4" enableStars={true} clickEffect={true}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-card rounded-lg flex items-center justify-center text-2xl">
@@ -876,7 +877,7 @@ export default function Rewards() {
                         )}
                       </div>
                     </div>
-                  </Card>
+                  </ParticleCard>
                 ))}
               </div>
             </>

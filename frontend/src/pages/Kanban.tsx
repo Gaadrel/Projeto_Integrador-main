@@ -21,6 +21,7 @@ import TaskFormModal from "@/components/TaskFormModal";
 import EvidenceModal from "@/components/EvidenceModal";
 import ReviewModal from "@/components/ReviewModal";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
+import { ParticleCard } from "@/components/ParticleCard";
 import { toast } from "@/hooks/use-toast";
 import mascotVideo from "@/assets/mascot  new.gif";
 
@@ -81,7 +82,7 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className="p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border border-border bg-card relative">
+      <ParticleCard className="rounded-xl p-4 cursor-grab active:cursor-grabbing border border-border bg-card relative" enableStars={true} clickEffect={false} enableTilt={false} enableMagnetism={false}>
         <div className="flex items-start justify-between mb-2">
           <h4 className="font-medium text-sm text-foreground flex-1 pr-8">{task.title}</h4>
           {(canReview || canMarkDone || canDelete) && (
@@ -144,7 +145,7 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
             {task.assignee.name.split(" ")[0]}
           </Badge>
         </div>
-      </Card>
+      </ParticleCard>
     </div>
   );
 }
