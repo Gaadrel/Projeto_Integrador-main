@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import type { Badge, FeedEvent, LeaderboardEntry, OnlineUser } from "@/types/feed";
 
@@ -31,7 +32,8 @@ function formatUserAvatar(name: string, avatar?: string) {
 }
 
 export default function Feed() {
-  const currentUser = JSON.parse(localStorage.getItem("azis_user") || "{}") as { id?: string; name?: string; points?: number };
+  const { user } = useAuth();
+  const currentUser = user ?? (JSON.parse(localStorage.getItem("azis_user") || "{}") as { id?: string; name?: string; points?: number });
   const [activeTab, setActiveTab] = useState("all");
   const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);

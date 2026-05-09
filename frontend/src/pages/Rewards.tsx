@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getCurrentUser } from "@/data/mock";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { getApiUrl, getAuthHeaders, fetchApi } from "@/lib/api";
@@ -222,7 +222,8 @@ function ConfettiOverlay({ onEnd }: ConfettiOverlayProps) {
 }
 
 export default function Rewards() {
-  const currentUser = getCurrentUser();
+  const { user } = useAuth();
+  const currentUser = user ?? getCurrentUser();
   const initialPoints = Number(currentUser.points ?? 0);
   const [points, setPoints] = useState(initialPoints);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -299,6 +300,12 @@ export default function Rewards() {
       console.error("Error loading redemptions:", error);
     }
   };
+
+  useEffect(() => {
+    if (user?.points != null) {
+      setPoints(Number(user.points));
+    }
+  }, [user]);
 
   const loadData = async () => {
     setLoading(true);

@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getActiveUsers, getCurrentUser, Task, TaskStatus } from "@/data/mock";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
@@ -65,6 +66,8 @@ function formatKanbanDeadline(deadline?: string | null) {
 
 function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; isDragging?: boolean; onReviewClick?: (task: Task) => void; onDelete?: (task: Task) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
+  const { user } = useAuth();
+  const currentUser = user ?? getCurrentUser();
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -72,7 +75,6 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const currentUser = getCurrentUser();
   const canReview = currentUser.nivel >= 2 && task.status === "done" && task.gestorId === currentUser.id;
   const canMarkDone = currentUser.nivel === 1 && task.assignee.id === currentUser.id && task.status === "in_progress";
   const canDelete = (currentUser.role === "gestor" || currentUser.role === "admin") && (task.status === "approved" || task.status === "rejected");
@@ -176,6 +178,7 @@ function DroppableColumn({ column, tasks, onReviewClick, onDelete }: { column: t
 
 
 export default function Kanban() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,7 +193,7 @@ export default function Kanban() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const activeUsers = getActiveUsers();
-  const currentUser = getCurrentUser();
+  const currentUser = user ?? getCurrentUser();
 
   // Filter tasks based on role
   const filteredTasks = currentUser.role === "funcionario" 
@@ -336,7 +339,7 @@ export default function Kanban() {
   };
 
   const handleTaskAction = (task: Task) => {
-    const currentUser = getCurrentUser();
+    const currentUser = user ?? getCurrentUser();
     if (currentUser.nivel === 1 && task.status === "in_progress") {
       // Funcionário marcando como concluída
       setSelectedTask(task);
@@ -510,7 +513,7 @@ export default function Kanban() {
       const allowedDrag = ['todo', 'in_progress', 'done'];
 
       if (!allowedDrag.includes(targetStatus)) {
-        const currentUser = getCurrentUser();
+        const currentUser = user ?? getCurrentUser();
         const description = currentUser.role === 'funcionario'
           ? 'Aprovação/reprovação só pode ser feita pelo superior'
           : 'Aprovação/reprovação deve ser feita via botão de revisão';

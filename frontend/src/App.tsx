@@ -23,15 +23,43 @@ import NotFound from "@/pages/NotFound";
 import UserImport from "./pages/UserImport";
 import OrgStructure from "./pages/OrgStructure";
 import { getCurrentUser } from "@/data/mock";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 
-const App = () => {
-  const currentUser = getCurrentUser();
+const AppRoutes = () => {
+  const { user } = useAuth();
+  const currentUser = user ?? getCurrentUser();
 
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/feed" element={<Feed />} />
+        <Route path="/kanban" element={<Kanban />} />
+        <Route path="/rewards" element={<Rewards />} />
+        <Route path="/ranking" element={<Ranking />} />
+        <Route path="/mood" element={<Mood />} />
+        <Route path="/profile" element={<Profile />} />
+        {currentUser.role !== "funcionario" && <Route path="/institution" element={<Institution />} />}
+        <Route path="/help" element={<Help />} />
+        {currentUser.role !== "funcionario" && <Route path="/userimport" element={<UserImport />} />}
+        {currentUser.role !== "funcionario" && <Route path="/orgstructure" element={<OrgStructure />} />}
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  )
+}
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -39,28 +67,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/kanban" element={<Kanban />} />
-              <Route path="/rewards" element={<Rewards />} />
-              <Route path="/ranking" element={<Ranking />} />
-              <Route path="/mood" element={<Mood />} />
-              <Route path="/profile" element={<Profile />} />
-              {currentUser.role !== "funcionario" && <Route path="/institution" element={<Institution />} />}
-              <Route path="/help" element={<Help />} />
-              {currentUser.role !== "funcionario" && <Route path="/userimport" element={<UserImport />} />}
-              {currentUser.role !== "funcionario" && <Route path="/orgstructure" element={<OrgStructure />} />}
-            </Route>
-            <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

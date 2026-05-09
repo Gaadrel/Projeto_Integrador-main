@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl, getAuthHeaders } from "@/lib/api";
 import { Chart, CategoryScale, LinearScale, BarElement, BarController, Tooltip, Title } from "chart.js";
 import BadgeClaimModal from "@/components/BadgeClaimModal";
@@ -70,12 +71,13 @@ const getPositionStyles = (position: number) => {
 };
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState<CurrentUser>({});
+  const { user } = useAuth();
+  const [currentUser, setCurrentUser] = useState<CurrentUser>(user ?? {});
   const isDark = useTheme();
   const chartCanvas = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
 
-  const [userPoints, setUserPoints] = useState<number>(0);
+  const [userPoints, setUserPoints] = useState<number>(Number(user?.points ?? 0));
   const [badges, setBadges] = useState<BadgeItem[]>([]);
   const [monthly, setMonthly] = useState<MonthlyStat[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -129,6 +131,13 @@ export default function Dashboard() {
   const currentPoints = userEntry?.points ?? userPoints;
   const distanceToTop = Math.max(0, topScore - currentPoints);
   const progressToTop = topScore > 0 ? Math.min(1, currentPoints / topScore) : 0;
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+      setUserPoints(Number(user.points ?? 0));
+    }
+  }, [user]);
 
   const loadDashboardData = async () => {
     try {

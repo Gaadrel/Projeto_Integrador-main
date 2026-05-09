@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getActiveUsers, getCurrentUser } from "@/data/mock";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -62,8 +63,9 @@ interface TaskFormModalProps {
 
 export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps) {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
-  const currentUser = getCurrentUser();
+  const currentUser = user ?? getCurrentUser();
   const users = getActiveUsers();
   const usersLoading = false;
   const usersError = null;
