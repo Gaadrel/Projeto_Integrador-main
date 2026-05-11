@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Calendar, Star, User, MoreVertical, Eye, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Calendar, Star, User, MoreVertical, Eye, CheckCircle, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getActiveUsers, getCurrentUser, Task, TaskStatus } from "@/data/mock";
+import { getCurrentUser, Task, TaskStatus } from "@/data/mock";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -65,7 +65,7 @@ function formatKanbanDeadline(deadline?: string | null) {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; isDragging?: boolean; onReviewClick?: (task: Task) => void; onDelete?: (task: Task) => void }) {
+function TaskCard({ task, isDragging, onReviewClick, onDelete, onEdit }: { task: Task; isDragging?: boolean; onReviewClick?: (task: Task) => void; onDelete?: (task: Task) => void; onEdit?: (task: Task) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
   const { user } = useAuth();
   const currentUser = user ?? getCurrentUser();
@@ -76,16 +76,17 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const canReview = currentUser.nivel >= 2 && task.status === "done" && task.gestorId === currentUser.id;
-  const canMarkDone = currentUser.nivel === 1 && task.assignee.id === currentUser.id && task.status === "in_progress";
-  const canDelete = (currentUser.role === "gestor" || currentUser.role === "admin") && (task.status === "approved" || task.status === "rejected");
+  const isManager = currentUser.role === "gestor" || currentUser.role === "admin";
+  const currentUserId = String(currentUser.id);
+  const canReview = currentUser.nivel >= 2 && task.status === "done" && task.gestorId === currentUserId;
+  const canMarkDone = currentUser.nivel === 1 && task.assignee.id === currentUserId && task.status === "in_progress";
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <ParticleCard className="rounded-xl p-4 cursor-grab active:cursor-grabbing border border-border bg-card relative" enableStars={true} clickEffect={false} enableTilt={false} enableMagnetism={false}>
         <div className="flex items-start justify-between mb-2">
           <h4 className="font-medium text-sm text-foreground flex-1 pr-8">{task.title}</h4>
-          {(canReview || canMarkDone || canDelete) && (
+          {(canReview || canMarkDone || isManager) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -110,12 +111,20 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
                     Revisar Tarefa
                   </DropdownMenuItem>
                 )}
-                {canDelete && (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete?.(task); }}>
-                    <XCircle className="w-4 h-4 mr-2" />
-                    {task.status === "approved" ? "Excluir (será removida em 7s)" : "Excluir"}
-                    {task.isDeleting ? ` (${task.deleteCountdown ?? 7}s)` : ""}
-                  </DropdownMenuItem>
+                {isManager && (
+                  <>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(task); }}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => { e.stopPropagation(); onDelete?.(task); }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {task.isDeleting ? `Excluindo em ${task.deleteCountdown ?? 7}s...` : "Excluir"}
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -150,7 +159,7 @@ function TaskCard({ task, isDragging, onReviewClick, onDelete }: { task: Task; i
   );
 }
 
-function DroppableColumn({ column, tasks, onReviewClick, onDelete }: { column: typeof columns[0]; tasks: Task[]; onReviewClick?: (task: Task) => void; onDelete?: (task: Task) => void }) {
+function DroppableColumn({ column, tasks, onReviewClick, onDelete, onEdit }: { column: typeof columns[0]; tasks: Task[]; onReviewClick?: (task: Task) => void; onDelete?: (task: Task) => void; onEdit?: (task: Task) => void }) {
   const { setNodeRef } = useDroppable({ id: column.id });
 
   return (
@@ -167,7 +176,7 @@ function DroppableColumn({ column, tasks, onReviewClick, onDelete }: { column: t
           <AnimatePresence>
             {tasks.map((task) => (
               <motion.div key={task.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
-                <TaskCard task={task} onReviewClick={onReviewClick} onDelete={onDelete} />
+                <TaskCard task={task} onReviewClick={onReviewClick} onDelete={onDelete} onEdit={onEdit} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -181,11 +190,12 @@ function DroppableColumn({ column, tasks, onReviewClick, onDelete }: { column: t
 export default function Kanban() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setIsLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showMascot, setShowMascot] = useState(false);
@@ -193,12 +203,10 @@ export default function Kanban() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  const activeUsers = getActiveUsers();
   const currentUser = user ?? getCurrentUser();
 
-  // Filter tasks based on role
-  const filteredTasks = currentUser.role === "funcionario" 
-    ? tasks.filter(task => task.assignee.id === currentUser.id)
+  const filteredTasks = currentUser.role === "funcionario"
+    ? tasks.filter(task => task.assignee.id === String(currentUser.id))
     : tasks;
 
   const mapApiTaskToTask = (task: any): Task => {
@@ -228,7 +236,7 @@ export default function Kanban() {
         name: task.assignee_name ?? "",
         email: task.assignee_email ?? "",
         role: task.assignee_role ?? "funcionario",
-        nivel: currentUser?.nivel ?? 1,
+        nivel: (currentUser?.nivel ?? 1) as 1 | 2 | 3,
         points: 0,
         institution_id: "",
         position: "",
@@ -239,9 +247,7 @@ export default function Kanban() {
   };
 
   const loadTasks = async () => {
-    setLoading(true);
-    setError(null);
-
+    setIsLoading(true);
     try {
       const response = await fetch(getApiUrl("/api/tasks"), {
         headers: {
@@ -259,10 +265,9 @@ export default function Kanban() {
       setTasks((data.tasks || []).map(mapApiTaskToTask));
     } catch (err: any) {
       console.error("loadTasks error:", err);
-      setError(err?.message ?? "Erro ao carregar tarefas");
       toast({ title: "Erro", description: err?.message ?? "Falha ao carregar tarefas" });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -425,11 +430,41 @@ export default function Kanban() {
     }
   };
 
+  const handleEditTask = async (data: { title: string; description: string; assignedTo: string; points: number; deadline?: string }) => {
+    if (!taskToEdit) return;
+    try {
+      const response = await fetch(getApiUrl(`/api/tasks/${taskToEdit.id}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+          points: data.points,
+          deadline: data.deadline || null,
+          assignee_id: Number(data.assignedTo),
+        }),
+        credentials: "include",
+      });
+      const responseData = await response.json();
+      if (!response.ok) throw new Error(responseData.error ?? "Erro ao editar tarefa");
+      await loadTasks();
+      setEditModalOpen(false);
+      setTaskToEdit(null);
+      toast({ title: "Tarefa atualizada", description: "A tarefa foi editada com sucesso." });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err?.message ?? "Falha ao editar tarefa" });
+    }
+  };
+
+  const openEditModal = (task: Task) => {
+    setTaskToEdit(task);
+    setEditModalOpen(true);
+  };
+
   const deletionIntervalsRef = useRef<Record<string, number>>({});
 
   const handleDeleteTask = async (task: Task) => {
     if (!(currentUser.role === "gestor" || currentUser.role === "admin")) return;
-    if (!["approved", "rejected"].includes(task.status)) return;
 
     try {
       const response = await fetch(getApiUrl(`/api/tasks/${task.id}`), {
@@ -590,6 +625,7 @@ export default function Kanban() {
               tasks={filteredTasks.filter((t) => t.status === col.id)}
               onReviewClick={handleTaskAction}
               onDelete={handleDeleteTask}
+              onEdit={openEditModal}
             />
           ))}
         </div>
@@ -612,9 +648,27 @@ export default function Kanban() {
       <ReviewModal
         open={reviewModalOpen}
         onOpenChange={setReviewModalOpen}
-        task={selectedTask}
+        task={selectedTask ? {
+          ...selectedTask,
+          assignee_name: selectedTask.assignee.name,
+          assignee_email: selectedTask.assignee.email,
+        } : null}
         onReview={handleReview}
         loading={actionLoading}
+      />
+
+      <TaskFormModal
+        open={editModalOpen}
+        onOpenChange={(open) => { if (!open) { setEditModalOpen(false); setTaskToEdit(null); } else { setEditModalOpen(true); } }}
+        onSubmit={handleEditTask}
+        isEditMode={true}
+        initialValues={taskToEdit ? {
+          title: taskToEdit.title,
+          description: taskToEdit.description,
+          points: taskToEdit.points,
+          deadline: taskToEdit.deadline || "",
+          assignedTo: taskToEdit.assignee.id,
+        } : undefined}
       />
 
       {showMascot && (

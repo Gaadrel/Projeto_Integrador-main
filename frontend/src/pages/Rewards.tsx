@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Gift, Star, ShoppingCart, History, Plus, Pencil, Trash2, Edit2 } from "lucide-react";
+import RewardRevealModal from "@/components/RewardRevealModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { ParticleCard } from "@/components/ParticleCard";
 import { Button } from "@/components/ui/button";
@@ -64,163 +65,6 @@ interface Redemption {
   reward_description: string;
 }
 
-interface ConfettiOverlayProps {
-  onEnd: () => void;
-}
-
-function ConfettiOverlay({ onEnd }: ConfettiOverlayProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number | null = null;
-    let particles: Array<any> = [];
-    let W = 420;
-    let H = 420;
-
-    const COLORS = [
-      '#FF6B6B','#FF8E53','#FFD166','#06D6A0',
-      '#118AB2','#A855F7','#F472B6','#34D399',
-      '#60A5FA','#FBBF24','#FB923C','#E879F9',
-      '#fff','#fff'
-    ];
-
-    const SHAPES = ['rect','circle','strip'];
-
-    const rand = (a: number, b: number) => a + Math.random() * (b - a);
-    const randItem = (arr: Array<any>) => arr[Math.floor(Math.random() * arr.length)];
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      W = rect.width;
-      H = rect.height;
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    };
-
-    const createParticle = (ox: number, oy: number) => {
-      const angle = rand(-Math.PI * 0.85, -Math.PI * 0.15);
-      const speed = rand(6, 22);
-      const shape = randItem(SHAPES);
-      const color = randItem(COLORS);
-      const size = shape === 'strip' ? { w: rand(3, 6), h: rand(10, 20) } : { w: rand(5, 13), h: rand(5, 13) };
-      return {
-        x: ox,
-        y: oy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        ax: rand(-0.15, 0.15),
-        ay: rand(0.25, 0.55),
-        rot: rand(0, Math.PI * 2),
-        rotSpeed: rand(-0.18, 0.18),
-        color,
-        shape,
-        w: size.w,
-        h: size.h,
-        life: 1,
-        decay: rand(0.012, 0.022),
-        wobble: rand(0, Math.PI * 2),
-        wobbleSpeed: rand(0.08, 0.18),
-        wobbleAmp: rand(0.4, 1.2),
-      };
-    };
-
-    const loop = () => {
-      ctx.clearRect(0, 0, W, H);
-      let alive = false;
-
-      for (const p of particles) {
-        if (p._delay > 0) {
-          p._delay -= 1;
-          continue;
-        }
-        if (!p._born) p._born = true;
-
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx += p.ax;
-        p.vy += p.ay;
-        p.vx *= 0.992;
-        p.vy *= 0.992;
-        p.rot += p.rotSpeed;
-        p.wobble += p.wobbleSpeed;
-        p.life -= p.decay;
-
-        if (p.life <= 0) continue;
-        alive = true;
-
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, p.life * 2);
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-
-        const wob = Math.sin(p.wobble) * p.wobbleAmp;
-        ctx.fillStyle = p.color;
-
-        if (p.shape === 'rect') {
-          ctx.fillRect(-p.w / 2 + wob, -p.h / 2, p.w, p.h);
-        } else if (p.shape === 'circle') {
-          ctx.beginPath();
-          ctx.ellipse(wob, 0, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillRect(-p.w / 2 + wob * 0.5, -p.h / 2, p.w, p.h);
-        }
-
-        ctx.restore();
-      }
-
-      if (alive) {
-        animId = requestAnimationFrame(loop);
-      } else {
-        animId = null;
-        onEnd();
-      }
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    const ox = W;
-    const oy = H;
-    const COUNT = 160;
-
-    for (let i = 0; i < COUNT; i++) {
-      const delay = Math.floor(i / 8);
-      const p = createParticle(ox, oy);
-      p._delay = delay;
-      p._born = false;
-      particles.push(p);
-    }
-
-    animId = requestAnimationFrame(loop);
-
-    return () => {
-      if (animId !== null) cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
-    };
-  }, [onEnd]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        width: '420px',
-        height: '420px',
-        pointerEvents: 'none',
-        zIndex: 9999,
-      }}
-    />
-  );
-}
 
 export default function Rewards() {
   const { user } = useAuth();
@@ -231,8 +75,7 @@ export default function Rewards() {
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [showChest, setShowChest] = useState(false);
-  const [pendingRedeemToast, setPendingRedeemToast] = useState<{ title: string; description: string } | null>(null);
+  const [revealReward, setRevealReward] = useState<{ name: string; emoji: string } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newReward, setNewReward] = useState({ title: "", description: "", points_cost: 0, quantity: 0 });
@@ -339,10 +182,9 @@ export default function Rewards() {
         await loadRewards();
         await loadRedemptions();
 
-        setShowChest(true);
-        setPendingRedeemToast({
-          title: `🎉 "${reward.name || reward.title}" resgatado com sucesso!`,
-          description: "",
+        setRevealReward({
+          name: reward.name || reward.title || "",
+          emoji: reward.emoji || "🎁",
         });
       } else {
         toast.error(data.message || "Erro ao resgatar recompensa");
@@ -885,14 +727,13 @@ export default function Rewards() {
         </TabsContent>
       </Tabs>
 
-      {showChest && (
-        <ConfettiOverlay
-          onEnd={() => {
-            setShowChest(false);
-            if (pendingRedeemToast) {
-              toast.success(pendingRedeemToast.title);
-              setPendingRedeemToast(null);
-            }
+      {revealReward && (
+        <RewardRevealModal
+          rewardName={revealReward.name}
+          rewardEmoji={revealReward.emoji}
+          onClose={() => {
+            toast.success(`🎉 "${revealReward.name}" resgatado com sucesso!`);
+            setRevealReward(null);
           }}
         />
       )}

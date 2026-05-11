@@ -2,17 +2,17 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import mascotVideo from "@/assets/mascot.png";
 import { useTheme } from "@/hooks/use-theme";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logoLight from "@/assets/logo-azis.svg";
 import logoDark from "@/assets/logo-azis-branco.svg";
-import mockup from "@/assets/mockup.png";
-import mockup2 from "@/assets/mockup2.png";
-import rocket from "@/assets/Rocket.png";
+import card1 from "@/assets/card1.png";
+import card2 from "@/assets/card2.png";
+import card3 from "@/assets/card3.png";
 import CardSwap, { Card } from "@/components/CardSwap";
 import Aurora from "@/components/Aurora";
 import Grainient from "@/components/Grainient";
+import CircularGallery from "@/components/CircularGallery";
 
 import {
   KanbanSquare,
@@ -21,15 +21,46 @@ import {
   Users,
   Zap,
   Star,
-  Gift,
   Clock,
 } from "lucide-react";
 
+const SELO_ITEMS = [
+  { image: '/badges/SELO_-_MARIO-removebg-preview.png',           text: 'Super Tarefa Bros!' },
+  { image: '/badges/SELO_-_SONIC-removebg-preview.png',           text: 'Velocidade de Entrega' },
+  { image: '/badges/SELO_-_SUPER_MAN-removebg-preview.png',       text: 'Homem de Aço' },
+  { image: '/badges/SELO_-_HARRY_POTTER-removebg-preview.png',    text: 'Câmara dos Segredos' },
+  { image: '/badges/SELO_-_HOMEM_ARANHA-removebg-preview (1).png', text: 'Grandes Poderes' },
+  { image: '/badges/SELO_-_LARA_CROFT-removebg-preview.png',      text: 'Origem das Entregas' },
+  { image: '/badges/SELO_-_STAR_WARS-removebg-preview.png',       text: 'Contra-Ataca' },
+  { image: '/badges/SELO_-_SIMBA-removebg-preview.png',           text: 'O Rei das Metas' },
+  { image: '/badges/SELO_-_ZELDA-removebg-preview.png',           text: 'A Lenda do Funcionário' },
+];
+
 const features = [
-  { icon: KanbanSquare, title: "Kanban Intuitivo", desc: "Organize tarefas com drag & drop, como Trello" },
-  { icon: Trophy, title: "Gamificação", desc: "Pontos, ranking e recompensas para motivar a equipe" },
-  { icon: BarChart3, title: "Dashboards", desc: "Relatórios de produtividade e satisfação em tempo real" },
-  { icon: Users, title: "Gestão de Times", desc: "Convide membros, atribua tarefas e acompanhe progresso" },
+  {
+    icon: KanbanSquare,
+    title: "Kanban Intuitivo",
+    desc: "Visualize e organize tarefas com drag & drop em tempo real. Priorize o que importa, elimine bloqueios e mantenha a equipe sempre sincronizada.",
+    tag: "Produtividade",
+  },
+  {
+    icon: Trophy,
+    title: "Gamificação Real",
+    desc: "Transforme metas em conquistas. Pontos, rankings e recompensas criam competição saudável e mantêm o time genuinamente engajado.",
+    tag: "Engajamento",
+  },
+  {
+    icon: BarChart3,
+    title: "Dashboards ao Vivo",
+    desc: "Relatórios de produtividade atualizados em tempo real. Tome decisões com dados precisos — não com suposições.",
+    tag: "Análise",
+  },
+  {
+    icon: Users,
+    title: "Gestão de Times",
+    desc: "Convide membros, atribua responsabilidades e acompanhe o progresso individual. Liderança clara, equipe alinhada.",
+    tag: "Colaboração",
+  },
 ];
 
 const CARD_IMG_STYLE: React.CSSProperties = {
@@ -42,9 +73,9 @@ const CARD_IMG_STYLE: React.CSSProperties = {
 };
 
 const HERO_CARDS = [
-  { src: mockup, alt: 'Dashboard Azis' },
-  { src: mockup2, alt: 'Kanban Azis' },
-  { src: mockup, alt: 'Preview Azis' },
+  { src: card1, alt: 'Dashboard Azis' },
+  { src: card2, alt: 'Kanban Azis' },
+  { src: card3, alt: 'Preview Azis' },
 ];
 
 export default function Landing() {
@@ -186,48 +217,99 @@ export default function Landing() {
             </CardSwap>
           </div>
 
-          {/* Mascote — livre, centralizado na página, mesma altura do badge */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-[58%] z-30 pointer-events-none">
-            <img
-              src={mascotVideo}
-              alt="Mascote Azis"
-              className="w-44 md:w-52 object-contain drop-shadow-2xl"
-            />
-          </div>
         </div>
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
+      <section id="features" className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-20">
+            <span
+              className="text-xs font-black tracking-widest uppercase mb-3 inline-block"
+              style={{ color: isDark ? '#60A5FA' : '#6366F1' }}
+            >
+              Plataforma
+            </span>
+            <h2
+              className="text-3xl md:text-4xl font-heading font-bold mb-3"
+              style={{ color: isDark ? '#F0F4FF' : '#0F172A' }}
+            >
               Tudo que sua equipe precisa
             </h2>
-            <p className="text-foreground text-lg">
+            <p className="text-lg" style={{ color: isDark ? '#6B7DB3' : '#64748B' }}>
               Funcionalidades pensadas para produtividade e bem-estar
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            {features.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-card rounded-xl p-6 border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-gradient-primary group-hover:text-primary-foreground transition-all">
-                  <f.icon className="w-6 h-6 text-primary group-hover:text-primary-foreground" />
-                </div>
-                <h3 className="font-heading font-semibold text-lg text-foreground mb-2">
-                  {f.title}
-                </h3>
-                <p className="text-foreground text-sm">{f.desc}</p>
-              </motion.div>
-            ))}
+          <div className="flex flex-col gap-10">
+            {features.map((f, i) => {
+              const isLeft  = i % 2 === 0;
+              const isBlue  = i === 0 || i === 2;
+              const iconBg     = isDark ? 'rgba(59,130,246,0.1)'   : 'rgba(99,102,241,0.08)';
+              const iconColor  = isDark ? '#3B82F6'                : '#6366F1';
+              const titleColor = isDark ? '#F0F4FF'                : '#0F172A';
+              const descColor  = isDark ? '#6B7DB3'                : '#64748B';
+              const cardBg     = isDark ? '#0E1117'                : '#ffffff';
+              const cardBorder = isDark
+                ? (isBlue ? 'rgba(59,130,246,0.18)' : 'rgba(124,58,237,0.18)')
+                : (isBlue ? 'rgba(99,102,241,0.18)' : 'rgba(124,58,237,0.18)');
+              const tagBg   = isBlue
+                ? (isDark ? 'rgba(59,130,246,0.12)'  : 'rgba(99,102,241,0.08)')
+                : (isDark ? 'rgba(124,58,237,0.12)'  : 'rgba(124,58,237,0.08)');
+              const tagText = isBlue
+                ? (isDark ? '#60A5FA' : '#6366F1')
+                : (isDark ? '#A78BFA' : '#7C3AED');
+
+              return (
+                <motion.div
+                  key={f.title}
+                  className={`flex ${isLeft ? 'justify-start' : 'justify-end'}`}
+                  initial={{ opacity: 0, x: isLeft ? -56 : 56 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  viewport={{ once: true, margin: '-80px' }}
+                >
+                  <div
+                    className="w-full md:w-[58%] rounded-3xl p-8 transition-shadow duration-300"
+                    style={{
+                      background: cardBg,
+                      border: `1px solid ${cardBorder}`,
+                      boxShadow: isDark
+                        ? '0 8px 32px rgba(0,0,0,0.45)'
+                        : '0 8px 32px rgba(99,102,241,0.08), 0 2px 8px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+                      style={{ background: iconBg }}
+                    >
+                      <f.icon style={{ width: 30, height: 30, color: iconColor }} />
+                    </div>
+
+                    <h3
+                      className="font-heading font-bold text-2xl mb-3"
+                      style={{ color: titleColor }}
+                    >
+                      {f.title}
+                    </h3>
+
+                    <p
+                      className="text-base leading-relaxed mb-6"
+                      style={{ color: descColor }}
+                    >
+                      {f.desc}
+                    </p>
+
+                    <span
+                      className="inline-block text-[0.7rem] font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+                      style={{ background: tagBg, color: tagText }}
+                    >
+                      {f.tag}
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -235,7 +317,7 @@ export default function Landing() {
       {/* GAMIFICAÇÃO - SELOS */}
       <section className="py-20 px-6 bg-gradient-to-b from-background via-background to-primary/5">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="text-xs md:text-sm font-black tracking-wider text-primary uppercase mb-4 inline-block">
               Gamificação
             </span>
@@ -247,79 +329,16 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-5xl mx-auto">
-            {/* Card 1 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0 }}
-              viewport={{ once: true }}
-              className="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Trophy className="w-6 h-6 text-yellow-400" />
-              </div>
-              <h3 className="font-heading font-bold text-xl text-foreground mb-2">
-                9 Selos Exclusivos
-              </h3>
-              <p className="text-foreground text-sm">
-                De Mário a Zelda — cada um com título temático e pontuação própria.
-              </p>
-            </motion.div>
-
-            {/* Card 2 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              viewport={{ once: true }}
-              className="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Zap className="w-6 h-6 text-orange-400" />
-              </div>
-              <h3 className="font-heading font-bold text-xl text-foreground mb-2">
-                Missões Semanais
-              </h3>
-              <p className="text-foreground text-sm">
-                Novos desafios toda semana para manter o engajamento sempre alto.
-              </p>
-            </motion.div>
-
-            {/* Card 3 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              className="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <Gift className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="font-heading font-bold text-xl text-foreground mb-2">
-                Loja de Recompensas
-              </h3>
-              <p className="text-foreground text-sm">
-                Pontos viram prêmios reais que a empresa define para sua equipe.
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Rocket Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            whileInView={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            viewport={{ once: true }}
-            className="flex justify-center"
-          >
-            <img 
-              src={rocket}
-              alt="Rocket"
-              className="w-40 h-40 object-contain"
+          <div style={{ height: '500px', position: 'relative' }}>
+            <CircularGallery
+              items={SELO_ITEMS}
+              bend={3}
+              textColor={isDark ? '#ffffff' : '#1e293b'}
+              borderRadius={0.05}
+              scrollSpeed={2}
+              scrollEase={0.03}
             />
-          </motion.div>
+          </div>
         </div>
       </section>
 

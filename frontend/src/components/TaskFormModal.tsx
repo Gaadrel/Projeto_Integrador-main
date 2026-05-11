@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,40 +46,62 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  nivel?: number;
-  gestorId?: string | null;
-  managerEmail?: string | null;
-}
-
 interface TaskFormModalProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   onSubmit: (data: FormData) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialValues?: Partial<FormData>;
+  isEditMode?: boolean;
 }
 
-export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps) {
-  const [open, setOpen] = useState(false);
+const DEFAULT_VALUES: FormData = {
+  title: "",
+  description: "",
+  assignedTo: "",
+  points: 10,
+  deadline: "",
+};
+
+export default function TaskFormModal({
+  trigger,
+  onSubmit,
+  open: controlledOpen,
+  onOpenChange,
+  initialValues,
+  isEditMode = false,
+}: TaskFormModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const { user } = useAuth();
+
+  const isControlled = controlledOpen !== undefined;
+  const dialogOpen = isControlled ? controlledOpen! : internalOpen;
+  const setDialogOpen = (val: boolean) => {
+    if (isControlled) onOpenChange?.(val);
+    else setInternalOpen(val);
+  };
 
   const currentUser = user ?? getCurrentUser();
   const users = getActiveUsers();
-  const usersLoading = false;
-  const usersError = null;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      assignedTo: "",
-      points: 10,
-      deadline: "",
-    },
+    defaultValues: DEFAULT_VALUES,
   });
+
+  useEffect(() => {
+    if (dialogOpen && initialValues) {
+      form.reset({
+        title: initialValues.title ?? "",
+        description: initialValues.description ?? "",
+        assignedTo: initialValues.assignedTo ?? "",
+        points: initialValues.points ?? 10,
+        deadline: initialValues.deadline ?? "",
+      });
+    } else if (!dialogOpen) {
+      form.reset(DEFAULT_VALUES);
+    }
+  }, [dialogOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pointsValue = form.watch("points");
   const parsedPoints = typeof pointsValue === "number" ? pointsValue : Number(pointsValue);
@@ -87,35 +109,35 @@ export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps)
   const isPointsInvalid = currentPoints < 1 || currentPoints > 1000;
 
   const subordinates = users
-    ? users.filter((user) => {
-        if (!currentUser || currentUser.role !== 'gestor') return false;
-
-        const isDirectSubordinateById = user.gestorId?.toString() === currentUser.id?.toString();
-        const isDirectSubordinateByEmail =
-          user.managerEmail?.toString().toLowerCase() === currentUser.email?.toLowerCase();
-
-        return Boolean(isDirectSubordinateById || isDirectSubordinateByEmail);
+    ? users.filter((u) => {
+        if (!currentUser || currentUser.role !== "gestor") return false;
+        const byId = u.gestorId?.toString() === currentUser.id?.toString();
+        const byEmail =
+          (u as any).managerEmail?.toString().toLowerCase() ===
+          currentUser.email?.toLowerCase();
+        return Boolean(byId || byEmail);
       })
     : [];
 
   const handleSubmit = (data: FormData) => {
     onSubmit(data);
-    form.reset();
-    setOpen(false);
-    toast({
-      title: "Tarefa criada",
-      description: "A nova tarefa foi criada com sucesso.",
-    });
+    form.reset(DEFAULT_VALUES);
+    setDialogOpen(false);
+    if (!isEditMode) {
+      toast({ title: "Tarefa criada", description: "A nova tarefa foi criada com sucesso." });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar Nova Tarefa</DialogTitle>
+          <DialogTitle>{isEditMode ? "Editar Tarefa" : "Criar Nova Tarefa"}</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes da nova tarefa no Kanban.
+            {isEditMode
+              ? "Edite os detalhes da tarefa."
+              : "Preencha os detalhes da nova tarefa no Kanban."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -167,7 +189,9 @@ export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps)
                     <Input
                       type="number"
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === "" ? "" : Number(e.target.value))
+                      }
                       min="1"
                       max="1000"
                       placeholder="Digite os pontos (1–1000)"
@@ -199,31 +223,23 @@ export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps)
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Atribuir para</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um subordinado" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {usersLoading ? (
-                        <div className="flex items-center justify-center p-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="ml-2">Carregando...</span>
-                        </div>
-                      ) : usersError ? (
-                        <div className="p-2 text-sm text-destructive">
-                          Erro ao carregar usuários
-                        </div>
-                      ) : subordinates.length > 0 ? (
-                        subordinates.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.name}
+                      {subordinates.length > 0 ? (
+                        subordinates.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
                           </SelectItem>
                         ))
                       ) : (
                         <div className="p-2 text-sm text-muted-foreground">
-                          Nenhum subordinado disponível para este gestor
+                          <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                          Nenhum subordinado disponível
                         </div>
                       )}
                     </SelectContent>
@@ -251,10 +267,10 @@ export default function TaskFormModal({ trigger, onSubmit }: TaskFormModalProps)
               )}
             />
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Criar Tarefa</Button>
+              <Button type="submit">{isEditMode ? "Salvar Alterações" : "Criar Tarefa"}</Button>
             </div>
           </form>
         </Form>
